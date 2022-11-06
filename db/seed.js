@@ -22,6 +22,9 @@ async function testDB() {
           tags: ["#youcandoanything", "#redfish", "#bluefish"]
         });
         console.log("Result:", updatePostTagsResult);
+        console.log("Calling getPostsByTagName with #happy");
+        const postsWithHappy = await getPostsByTagName("#happy");
+        console.log("Result:", postsWithHappy);
     }catch(error){
         console.log(error)
     }
@@ -356,6 +359,23 @@ async function getPostById(postId) {
       await addTagsToPost(postId, tagList);
   
       return await getPostById(postId);
+    } catch (error) {
+      throw error;
+    }
+  }
+  async function getPostsByTagName(tagName) {
+    try {
+      const { rows: postIds } = await client.query(`
+        SELECT posts.id
+        FROM posts
+        JOIN posts_tags ON posts.id=posts_tags."postId"
+        JOIN tags ON tags.id=posts_tags."tagId"
+        WHERE tags.name=$1;
+      `, [tagName]);
+  
+      return await Promise.all(postIds.map(
+        post => getPostById(post.id)
+      ));
     } catch (error) {
       throw error;
     }
